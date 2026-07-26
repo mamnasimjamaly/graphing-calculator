@@ -692,8 +692,10 @@ function JSgCalc (element){
 	this.zoom = function(scale, event) {
 		var range = this.getRange();
 		if(event) {
-			var mousex = event.pageX - this.canvasX;
-			var mousey = event.pageY - this.canvasY;
+			var pageX = typeof event.pageX !== 'undefined' ? event.pageX : (event.originalEvent ? event.originalEvent.pageX : 0);
+			var pageY = typeof event.pageY !== 'undefined' ? event.pageY : (event.originalEvent ? event.originalEvent.pageY : 0);
+			var mousex = pageX - this.canvasX;
+			var mousey = pageY - this.canvasY;
 			var mousetop = 1-(mousey / this.height);	//if we divide the screen into two halves based on the position of the mouse, this is the top half
 			var mouseleft = mousex / this.width;	//as above, but the left hald
 			this.currCoord.x1 += range.x * scale * mouseleft;
@@ -773,7 +775,8 @@ function JSgCalc (element){
 				self.checkMove(event.pageX - self.canvasX, event.pageY - self.canvasY);
 			}).mousedown(function(event) {
 				self.mouseDown(event);
-			}).mousewheel(function(event, delta) {
+			}).on('wheel', function(event) {
+				var delta = event.originalEvent.wheelDelta || -event.originalEvent.deltaY;
 				self.mouseWheel(event, delta);
 				return false;
 			}).mouseup(function(event) {
