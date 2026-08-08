@@ -79,7 +79,8 @@ function calc() {
 
 		var interval = (end-start) / 40;
 		var xval = start - interval;
-		var prevanswer = startanswer = f(xval);
+		var startanswer = f(xval);
+		var prevanswer = startanswer;
 		for(xval = start; xval <= end; xval += interval) {
 			xval = this.roundFloat(xval);
 			var answer = f(xval);
@@ -132,7 +133,7 @@ function calc() {
                scope[name] = x;
             });
 
-           return code.eval(scope);
+           return code.evaluate(scope);
         };
 
 		while (prev > center - range && prev < center + range && j < 100) {
@@ -234,7 +235,7 @@ function calc() {
             scope[name] = x;
          });
 
-         return code.eval(scope);
+         return code.evaluate(scope);
        };
     };
 
@@ -243,11 +244,11 @@ function calc() {
 	        return 0;
 	    }
 
-	    d = Math.ceil(math.log10(num < 0 ? -num: num));
-	    power = n - d;
+	    var d = Math.ceil(math.log10(num < 0 ? -num: num));
+	    var power = n - d;
 
-	    magnitude = Math.pow(10, power);
-	    shifted = Math.round(num*magnitude);
+	    var magnitude = Math.pow(10, power);
+	    var shifted = Math.round(num*magnitude);
 	    return shifted/magnitude;
 	};
 
@@ -257,3 +258,4 @@ function calc() {
 }
 
 Calc = new calc();
+window.Calc = Calc;

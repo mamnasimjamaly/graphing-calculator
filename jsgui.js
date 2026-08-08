@@ -10,7 +10,7 @@ function JSgui() {
 	
 	this.setQuality = function(q) {
 		$("#quality_select a").removeClass("option_selected");
-		q2 = String(q).replace(".", "");
+		var q2 = String(q).replace(".", "");
 		$("#quality_select_"+q2).addClass("option_selected");
 
 		jsgcalc.quality = q;
@@ -123,6 +123,7 @@ function JSgui() {
 		var equations = jsgcalc.lines;
 		
 		$("#graph_inputs").html("");
+		var i;
 		for(i in equations) {
 			$("#graph_inputs").append("<div id=\"graph_input_wrapper_"+i+"\" class=\"graph_input_wrapper\">"+
 				"<div class=\"graph_color_indicator\" id=\"graph_color_indicator_"+i+"\"></div>"+
@@ -139,7 +140,7 @@ function JSgui() {
 			});
 		});
 		
-		this.currInput = i + 1;
+		this.currInput = (typeof i !== 'undefined') ? Number(i) + 1 : 0;
 		
 		$("#graph_input_wrapper_"+this.currEq).addClass("active_equation");
 	}
@@ -147,13 +148,14 @@ function JSgui() {
 
 }
 
-jsgui = new JSgui;
+var jsgui = new JSgui;
+window.jsgui = jsgui;
+window.JSgui = JSgui;
 
 $(document).ready(function() {
-	jsgui.addInput();
 	$(".toolbox_close a").click(function() {
 		$(".toolbox").hide();
-	})
-	
-	document.body.onselectstart = function () { return false; }
+	});
+
+	document.body.onselectstart = function () { return false; };
 });

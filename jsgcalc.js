@@ -255,6 +255,7 @@ function JSgCalc (element){
         var equation;
 
 		var answer = false;
+		var i;
 		for(i in this.lines) {
 			if(this.getEquation(i) == equation1)
 				continue;
@@ -382,6 +383,7 @@ function JSgCalc (element){
 		var yscale = Math.max(yrange/this.height, 1E-20);
 
 		//Calculate the scale of the gridlines
+		var i, c;
 		for(i = 0.000000000001, c = 0; xrange/i > this.maxgridlines.x -1; c++) {
 			if(c % 3 === 1) i *= 2.5;	//alternating between 2, 5 and 10
 			else i *= 2;
@@ -408,7 +410,8 @@ function JSgCalc (element){
 		this.ctx.font = "10pt 'open sans'";	//set the font
 		this.ctx.textAlign = "center";
 
-		var xaxis = yaxis = null;
+		var xaxis = null;
+		var yaxis = null;
 
 		//currx is the current gridline being drawn, as a numerical value (not a pixel value)
 		var currx = this.arbFloor(x1, this.xgridscale);	//set it to before the lowest x-value on the screen
@@ -438,6 +441,7 @@ function JSgCalc (element){
 		}
 
 		var sigdigs = String(currx).length + 3;
+		var xpos, ypos;
 		//VERTICAL LINES
 		for(i = 0; i < this.maxgridlines.x; i++) {
 			xpos = ((currx-x1)/(x2-x1))*this.width;	//position of the line (in pixels)
@@ -798,9 +802,12 @@ function JSgCalc (element){
 };
 
 $(document).ready(function() {
-	jsgcalc = new JSgCalc("graph");
+	var jsgcalc = new JSgCalc("graph");
+	window.jsgcalc = jsgcalc;
+	jsgui.addInput();
 	jsgcalc.initCanvas();
 });
+window.JSgCalc = JSgCalc;
 
 function about() {
 	alert("For demonstration purposes only.\n\nCalculations are not guaranteed to be correct and are often inaccurate due to floating point errors. Use at your own risk.");
