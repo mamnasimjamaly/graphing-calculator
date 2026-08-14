@@ -2,6 +2,12 @@
  * This file handles math calculations
  */
 
+import { math, _ } from './globals.js';
+
+function dump(text) {
+	console.log(text);
+}
+
 //Machine epsilon
 function calcEps(){
 	var temp1, temp2, mchEps;
@@ -258,4 +264,6 @@ function calc() {
 }
 
 Calc = new calc();
-window.Calc = Calc;
+globalThis.Calc = Calc;
+
+export { Calc };
