@@ -84,7 +84,20 @@ GraphN is built on standard web technologies and leverages highly reliable third
 * `BigInt.js` - A comprehensive library for handling arbitrary-precision integers and mathematical operations on big numbers.
 * `jsgcalc.css` - Custom styles defining the modern interface layout, toolbar icons, fancy buttons, and responsive grid panels.
 * `images/` - Icon assets representing tools like root, minmax, intersect, trace, and settings.
-* `.github/workflows/ci.yml` - GitHub Actions workflow that installs dependencies, builds the app, and runs tests on every push and pull request to `main`.
+* `.github/workflows/ci.yml` - GitHub Actions workflow that installs dependencies, builds the app, runs tests, and deploys `dist/` to S3 on pushes to `main`.
+
+---
+
+## ☁️ Deploy
+
+Pushes to `main` build, test, and sync `dist/` to an S3 bucket. Pull requests only build and test.
+
+Add these repository secrets:
+
+* `AWS_ROLE_ARN` — IAM role GitHub Actions assumes via OIDC
+* `S3_BUCKET_NAME` — destination bucket name
+
+The role needs `s3:ListBucket` on the bucket and `s3:GetObject`, `s3:PutObject`, and `s3:DeleteObject` on the bucket objects. Its trust policy must allow this GitHub repository to assume the role. The workflow uses `us-east-1`; change that in `.github/workflows/ci.yml` if the bucket is in another region.
 
 ---
 
