@@ -4,31 +4,34 @@ An elegant, client-side, interactive 2D graphing calculator built with HTML5 Can
 
 ![GraphN Interface](graph.png)
 
-## 🚀 Live Demo & Getting Started
+## 🚀 Getting Started
 
-Since GraphN is a completely client-side application, there is no build step or server setup required!
+GraphN is a client-side Vite app. You need Node.js 22+ and npm.
 
-1. Clone or download this repository:
+1. Clone the repository:
    ```bash
    git clone https://github.com/mamnasimjamaly/graphing-calculator.git
-   ```
-2. Navigate into the project directory:
-   ```bash
    cd graphing-calculator
    ```
-3. Open `index.html` in your favorite modern web browser (Google Chrome, Mozilla Firefox, or Opera are recommended):
-   * **On Windows (Command Prompt):**
-     ```cmd
-     start index.html
-     ```
-   * **On macOS:**
-     ```bash
-     open index.html
-     ```
-   * **On Linux:**
-     ```bash
-     xdg-open index.html
-     ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open the URL Vite prints (usually `http://localhost:5173`) in a modern browser.
+
+### Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Build the production bundle into `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm test` | Run the Vitest unit tests once |
+| `npm run test:watch` | Run tests in watch mode |
 
 ---
 
@@ -59,6 +62,8 @@ Access the settings drawer to modify:
 ## 🛠️ Tech Stack & Architecture
 
 GraphN is built on standard web technologies and leverages highly reliable third-party mathematical libraries:
+* **Vite:** Development server, ES module bundling, and production builds.
+* **Vitest:** Unit tests for the calculation engine.
 * **HTML5 Canvas API:** Provides high-performance 2D rendering of gridlines, axes, text labels, and custom functions.
 * **Math.js:** Serves as the math engine, parsing math expressions into abstract syntax trees (AST) and evaluating them efficiently.
 * **jQuery:** Handles UI updates, tool actions, and settings drawer animations.
@@ -70,12 +75,16 @@ GraphN is built on standard web technologies and leverages highly reliable third
 ## 📂 Project Structure
 
 * `index.html` - The main application webpage containing the sidebar layout, canvas, toolbar, and settings configurations.
+* `main.js` - Vite entry point that loads the application modules.
+* `globals.js` - Shared jQuery, Underscore, and Math.js instances used by the rest of the app.
 * `calc.js` - Contains the math engine logic, including machine epsilon calculation, angle conversions, root finding (Newton's Method), local extrema search, intersection calculations, and derivative stencil approximations.
+* `calc.test.js` - Vitest unit tests for the calculation engine.
 * `jsgcalc.js` - Controls the graphing canvas logic (drawing functions, rendering gridlines, handling pan/drag/zoom operations, and mouse actions).
 * `jsgui.js` - Manages sidebar interactions, addition of input rows, toolbar selections, evaluation events, and menu toggles.
 * `BigInt.js` - A comprehensive library for handling arbitrary-precision integers and mathematical operations on big numbers.
 * `jsgcalc.css` - Custom styles defining the modern interface layout, toolbar icons, fancy buttons, and responsive grid panels.
 * `images/` - Icon assets representing tools like root, minmax, intersect, trace, and settings.
+* `.github/workflows/ci.yml` - GitHub Actions workflow that installs dependencies, builds the app, and runs tests on every push and pull request to `main`.
 
 ---
 
