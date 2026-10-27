@@ -60,8 +60,8 @@ function calc() {
 
     _(['asin', 'acos', 'atan', 'atan2']).each(function(name) {
         var fn = math[name]; // the original function
-        replacements[name] = function replacement(x) {
-            return Calc.convertRadians(fn(x));
+        replacements[name] = function replacement(...args) {
+            return Calc.convRadians(fn(...args));
         };
     });
 

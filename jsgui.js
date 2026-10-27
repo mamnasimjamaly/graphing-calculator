@@ -80,16 +80,22 @@ function JSgui() {
 	}
 	
 	this.updateInputData = function() {
-		jsgcalc.lines = [];
-		$("#graph_inputs div.graph_input_wrapper").each(function() {
-			jsgcalc.lines.push({equation : $("input", this).val(), color : $(".graph_color_indicator", this).css('backgroundColor')});
+		var next = [];
+		$("#graph_inputs div.graph_input_wrapper").each(function(index) {
+			var color = $(".graph_color_indicator", this).attr("data-color");
+			if (!color && jsgcalc.lines[index])
+				color = jsgcalc.lines[index].color;
+			next.push({
+				equation: $.trim($("input", this).val()),
+				color: color
+			});
 		});
+		jsgcalc.lines = next;
 	}
 
 	this.evaluate = function() {
 		this.updateInputData();
 		jsgcalc.draw();
-		this.refreshInputs();
 	}
 
 	this.findAvailableColor = function() {
@@ -107,42 +113,97 @@ function JSgui() {
 		$("input.jsgcalc_ymax").val(Math.round(jsgcalc.currCoord.y2 * 1000) / 1000);
 	}
 
-	this.addInput = function() {
+	this.addInput = function(equation) {
 		this.updateInputData();
 		var newcolor = this.findAvailableColor();
 		this.lineColors[newcolor] = this.currInput;
 		jsgcalc.lines.push({
-			equation: "",
+			equation: equation || "",
 			color: newcolor
 		});
 		this.currInput++;
+		this.currEq = jsgcalc.lines.length - 1;
 		this.refreshInputs();
+	}
+
+	this.removeInput = function(index) {
+		index = Number(index);
+		this.updateInputData();
+		if (jsgcalc.lines.length <= 1) {
+			jsgcalc.lines[0].equation = "";
+			this.currEq = 0;
+			this.refreshInputs();
+			jsgcalc.draw();
+			return;
+		}
+
+		jsgcalc.lines.splice(index, 1);
+		if (this.currEq > index)
+			this.currEq--;
+		if (this.currEq >= jsgcalc.lines.length)
+			this.currEq = jsgcalc.lines.length - 1;
+		this.refreshInputs();
+		jsgcalc.draw();
 	}
 	
 	this.refreshInputs = function() {
 		var equations = jsgcalc.lines;
-		
-		$("#graph_inputs").html("");
-		var i;
-		for(i in equations) {
-			$("#graph_inputs").append("<div id=\"graph_input_wrapper_"+i+"\" class=\"graph_input_wrapper\">"+
-				"<div class=\"graph_color_indicator\" id=\"graph_color_indicator_"+i+"\"></div>"+
-				"<div class=\"graph_equation_display\"><span>y =</span><input id=\"graph_input_"+i+"\" size=\"20\" value=\""+equations[i].equation+"\"/></div></div>");
-			$("#graph_color_indicator_"+i).css("backgroundColor", equations[i].color);
-			this.lineColors[equations[i].color] = i;
-		}
-		
-		$("#graph_inputs div.graph_input_wrapper").each(function() {
-			$(this).bind("click", function() {
-				var id = $(this).attr("id");
-				var num = String(id).replace("graph_input_wrapper_", "");
-				jsgui.selectEquation(num);
+		var self = this;
+		var color;
+
+		for (color in this.lineColors)
+			this.lineColors[color] = -1;
+
+		var container = $("#graph_inputs");
+		container.empty();
+
+		equations.forEach(function(eq, i) {
+			self.lineColors[eq.color] = i;
+
+			var wrapper = $("<div>", {
+				id: "graph_input_wrapper_" + i,
+				"class": "graph_input_wrapper"
 			});
+			var swatch = $("<div>", {
+				"class": "graph_color_indicator",
+				id: "graph_color_indicator_" + i
+			}).css("backgroundColor", eq.color).attr("data-color", eq.color);
+			var display = $("<div>", { "class": "graph_equation_display" });
+			display.append($("<span>").text("y ="));
+			display.append($("<input>", {
+				id: "graph_input_" + i,
+				type: "text",
+				value: eq.equation,
+				spellcheck: "false",
+				autocomplete: "off"
+			}));
+			var remove = $("<button>", {
+				type: "button",
+				"class": "remove_equation",
+				title: "Remove equation",
+				text: "\u00d7"
+			});
+			var error = $("<div>", { "class": "equation_error_text" });
+
+			wrapper.append(display, swatch, remove, error);
+			wrapper.on("click", function() {
+				self.selectEquation(i);
+			});
+			remove.on("click", function(event) {
+				event.stopPropagation();
+				self.removeInput(i);
+			});
+			display.find("input").on("keydown", function(event) {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					self.evaluate();
+				}
+			});
+			container.append(wrapper);
 		});
-		
-		this.currInput = (typeof i !== 'undefined') ? Number(i) + 1 : 0;
-		
-		$("#graph_input_wrapper_"+this.currEq).addClass("active_equation");
+
+		this.currInput = equations.length;
+		$("#graph_input_wrapper_" + this.currEq).addClass("active_equation");
 	}
 	
 
@@ -157,5 +218,21 @@ $(document).ready(function() {
 		$(".toolbox").hide();
 	});
 
-	document.body.onselectstart = function () { return false; };
+	$("#toolbox_zoombox input").on("keydown", function(event) {
+		if (event.key !== "Enter")
+			return;
+		jsgcalc.setWindow(
+			$("#toolbox_zoombox_xmin").val(),
+			$("#toolbox_zoombox_xmax").val(),
+			$("#toolbox_zoombox_ymin").val(),
+			$("#toolbox_zoombox_ymax").val()
+		);
+	});
+
+	$("#toolbox_trace_input").on("keydown", function(event) {
+		if (event.key !== "Enter")
+			return;
+		event.preventDefault();
+		jsgui.doTrace($(this).val());
+	});
 });

@@ -2,9 +2,10 @@
 <html lang="en">
 
 <head>
-	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-	<title>A JavaScript Graphing Calculator</title>
+	<title>GraphN — JavaScript Graphing Calculator</title>
 
 	<link rel="stylesheet" type="text/css" href="/jsgcalc.css" />
 	<script type="module" src="/main.js"></script>
@@ -103,6 +104,7 @@
 			<a class="fancybutton" href="javascript:void(0)" onclick="jsgui.evaluate()">Evaluate</a>
 			<a class="fancybutton" href="javascript:void(0)" onclick="jsgui.addInput()">+</a>
 			<a class="fancybutton greybutton" href="javascript:void(0)" id="settings_button" onclick="$('#settings').toggle(400)"><img src='images/settings.png' alt='Settings' /></a><br /><br />
+			<p id="syntax_hint">Press Enter to plot. Scroll to zoom. Try <code>sin(x)</code>, <code>x^2</code>, or <code>tan(x)</code>.</p>
 		</div>
 
 		<div id="settings">
@@ -134,9 +136,8 @@
 </div>
 
 <div id="graph_wrapper">
-	<canvas id="graph">Sorry, your browser does not support this application. The following browsers are supported:<br /><br />
-	<a href="http://www.google.com/chrome/">Google Chrome</a><br /><a href="http://www.mozilla.com/firefox/">Mozilla Firefox</a><br />
-	<a href="http://www.opera.com/">Opera</a></canvas>
+	<canvas id="graph">Sorry, your browser does not support this application.</canvas>
+	<div id="coord_readout"></div>
 </div>
 
 </div>

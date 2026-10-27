@@ -1,6 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Lora:400,400italic);
-@import url(http://fonts.googleapis.com/css?family=Monda);
-@import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,400italic);
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,600|Droid+Serif:400,400italic&display=swap);
 body { font-family: "Open Sans", sans-serif; font-size: 9pt;}
 
 #wrapper { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%;overflow: hidden;}
@@ -26,13 +24,22 @@ body { font-family: "Open Sans", sans-serif; font-size: 9pt;}
 .toolbox_close { float: right; display: inline-block;}
 .toolbox_main { padding: 3px;}
 
-.graph_input_wrapper { margin-bottom: 5px; padding: 4px 6px; margin: 1px 0px; font-family: "Droid Serif", "Georgia", serif; font-size: 12pt;}
-.active_equation { background: #F0F0F0; padding: 3px 5px; border: 1px solid #CCC; border-radius: 5px; text-shadow:1px 1px 0px #FAFAFA; 
+.graph_input_wrapper { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 1px 0 6px; padding: 4px 6px; font-family: "Droid Serif", "Georgia", serif; font-size: 12pt;}
+.active_equation { background: #F0F0F0; border: 1px solid #CCC; border-radius: 5px; text-shadow:1px 1px 0px #FAFAFA; 
 	-webkit-box-shadow: inset 0px -900px 50px -900px rgba(150, 150, 150, 0.3), inset 0px 1px 0px 0px #FFF;
 	box-shadow: inset 0px -900px 40px -900px rgba(150, 150, 150, 0.3), inset 0px 1px 0px 0px #FFF; }
-.graph_equation_display span { padding-right: 5px;}
-.graph_color_indicator { height: 22px; width: 22px; border: 1px solid #BBB; float: right;}
-#graph_inputs input { height: 16px; padding: 1px; clear: both; width: 156px; border: 1px solid #BBB; padding: 3px; font-size: 12pt; font-family: "Droid Serif", "Georgia", serif;}
+.graph_equation_display { display: flex; flex: 1; align-items: center; gap: 4px; min-width: 0; }
+.graph_equation_display span { padding-right: 2px;}
+.graph_color_indicator { height: 22px; width: 22px; border: 1px solid #BBB; flex: 0 0 22px; }
+#graph_inputs input { box-sizing: border-box; height: 32px; width: auto; flex: 1; min-width: 0; border: 1px solid #BBB; padding: 3px 6px; font-size: 12pt; font-family: "Droid Serif", "Georgia", serif;}
+.remove_equation { flex: 0 0 22px; width: 22px; height: 22px; border: none; background: transparent; color: #888; font-size: 18px; line-height: 18px; padding: 0; cursor: pointer; }
+.remove_equation:hover { color: #c0392b; }
+.equation_error input { border-color: #c0392b; background: #fff6f6; }
+.equation_error_text { flex: 1 0 100%; min-height: 0; color: #c0392b; font-family: "Open Sans", sans-serif; font-size: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#syntax_hint { color: #666; font-size: 9pt; line-height: 1.4; margin: 4px 0 0; }
+#syntax_hint code { font-family: "Droid Serif", Georgia, serif; color: #333; }
+#coord_readout { position: absolute; left: 12px; bottom: 10px; z-index: 4; pointer-events: none; background: rgba(255,255,255,0.9); border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; font-size: 12px; color: #333; }
+#coord_readout:empty { display: none; }
 
 #settings_button {padding: 5px 6px; height: 16px; vertical-align: bottom;}
 #settings_button img { height: 100%; opacity: 0.5;}

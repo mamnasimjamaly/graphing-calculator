@@ -1,3 +1,5 @@
+import { evaluateLines, formatReadout, normalizeWindow, renderStrokes, traceEquation } from './graph-math.js';
+
 function dump(text) {
 	console.log(text);
 }
@@ -60,76 +62,45 @@ function JSgCalc (element){
 		return "#000000";
 	};
 
+	this.getFunction = function(equation) {
+		if(!this.calccache[equation])
+			this.calccache[equation] = Calc.makeFunction(equation);
+		return this.calccache[equation];
+	};
+
 	this.drawEquation = function(equation, color, thickness) {
-		if(!equation)
+		if(!equation || !String(equation).trim())
 			return false;
 
 		var x1 = this.currCoord.x1;
-		var x2 = this.currCoord.x2;
 		var y1 = this.currCoord.y1;
 		var y2 = this.currCoord.y2;
-
-		var xrange = x2 - x1;
-		var yrange = y2 - y1;
-
 		var scale = this.getScale();
+		var f = this.getFunction(equation);
+		var strokes = traceEquation(f, {
+			x1: x1,
+			y1: y1,
+			y2: y2,
+			scaleX: scale.x,
+			width: this.width,
+			quality: this.quality
+		});
 
-		if(!this.calccache[equation])
-			this.calccache[equation] = new Object;
+		this.fillareapath = [[0, this.height - ((-y1) * scale.y)]];
+		var self = this;
+		strokes.forEach(function(stroke) {
+			stroke.forEach(function(point) {
+				self.fillareapath.push([point.i, self.height - ((point.y - y1) * scale.y)]);
+			});
+		});
 
-		this.ctx.strokeStyle = color;
-		var old_linewidth = this.ctx.linewidth
-		if(thickness)
-			this.ctx.linewidth = thickness;
-		this.ctx.beginPath();
-		//We don't want to draw lines that go off the screen too much, so we keep track of how many times we've had
-		//to go off the screen here
-		var lineExists = 0;
-		var lastpoint = 0;
-
-		this.fillareapath = [];
-		this.fillareapath.push([0, this.height - ((-y1) * scale.y)]);
-		//Loop through each pixel
-
-		var inverseQuality = 1.0 / this.quality;
-		var inverseScaleX = 1.0 / scale.x;
-
-		var maxxval = this.width + inverseQuality;
-
-		var f = Calc.makeFunction(equation);
-
-		for(var i = 0; i < maxxval; i += inverseQuality) {
-			var xval = i * inverseScaleX + x1;	//calculate the x-value for a given pixel
-            var yval = f(xval);
-
-			var ypos = this.height - ((yval - y1) * scale.y);
-			//The line is on the screen, or pretty close to it
-			if(ypos >= (this.height * -1) && ypos <= this.height * 2) {
-				if(lineExists > 1)
-					this.ctx.beginPath();
-
-				if(lastpoint !== false && ((lastpoint > 0 && yval < 0) || (lastpoint < 0 && yval > 0))) {
-					this.ctx.moveTo(i, ypos);
-				}
-				else {
-					this.ctx.lineTo(i, ypos);
-				}
-
-				lineExists = 0;
-				lastpoint = false;
-			}
-			else if(lineExists <= 1) {	//The line is off the screen
-				this.ctx.lineTo(i, ypos);
-				lastpoint = yval;
-				this.ctx.stroke();
-				lineExists++;
-			}
-			this.fillareapath.push([i, ypos]);
-			//this.ctx.fillRect(i - 0.5, ypos - 0.5, 1, 1);
-		}
-		this.fillareapath.push([maxxval, this.height - ((-y1) * scale.y)]);
-		this.ctx.stroke();
-		this.ctx.linewidth = old_linewidth
+		renderStrokes(this.ctx, strokes, {
+			y1: y1,
+			scaleY: scale.y,
+			height: this.height,
+			color: color,
+			thickness: thickness || 2
+		});
 	};
 
 	this.drawFillArea = function() {
@@ -568,19 +539,33 @@ function JSgCalc (element){
 		this.draw();
 	};
 
-	this.draw = function() {
-		this.drawGrid();
-		for(var i in this.lines) {
-			//dump(this.lines[i].equation);
-			//try {
-			    var equation = this.lines[i].equation;
-			    this.drawEquation(equation, this.lines[i].color, 3);
-			    /*
-			} catch (e) {
-                console.warn('Error drawing equation "' +
-                  this.lines[i].equation + '"', e);
-			}     */
+	this.markEquationError = function(index, message) {
+		var node = document.getElementById("graph_input_wrapper_" + index);
+		if(!node)
+			return;
+		var err = node.querySelector(".equation_error_text");
+		if(message) {
+			node.classList.add("equation_error");
+			node.title = message;
+			if(err && err.textContent !== message)
+				err.textContent = message;
 		}
+		else if(node.classList.contains("equation_error")) {
+			node.classList.remove("equation_error");
+			node.title = "";
+			if(err)
+				err.textContent = "";
+		}
+	};
+
+	this.draw = function() {
+		var self = this;
+		this.drawGrid();
+		evaluateLines(this.lines, function(line) {
+			self.drawEquation(line.equation, line.color, 2.5);
+		}).forEach(function(result) {
+			self.markEquationError(result.index, result.error);
+		});
 		jsgui.updateValues();
 	};
 
@@ -642,10 +627,20 @@ function JSgCalc (element){
 			this.drawDerivative(this.getEquation(jsgui.currEq), this.getColor(jsgui.currEq), x);
 		}
 		this.prevDrag = {x : x, y : y};
+		this.updateReadout(x, y);
+	};
+
+	this.updateReadout = function(x, y) {
+		var value = this.getValue(x, y);
+		if(!isFinite(value.x) || !isFinite(value.y))
+			return;
+		$("#coord_readout").text(formatReadout(value.x, value.y, function(n, digits) {
+			return Calc.roundToSignificantFigures(n, digits);
+		}));
 	};
 
 	this.mouseDown = function(event) {
-		document.body.style.cursor = "hand";
+		document.body.style.cursor = "grabbing";
 		if(this.mousebutton == 0) {
 			if(jsgui.currtool === "zoombox") {
 				jsgui.currtool = "zoombox_active";
@@ -658,7 +653,7 @@ function JSgCalc (element){
 	};
 
 	this.mouseUp = function(event) {
-		//document.body.style.cursor = "auto";
+		document.body.style.cursor = "";
 		if(jsgui.currtool === "zoombox_active") {
 			this.doZoomBox(this.startDrag.x, this.startDrag.y, event.pageX - this.canvasX, event.pageY - this.canvasY);
 			jsgui.setTool("pointer");
@@ -685,10 +680,13 @@ function JSgCalc (element){
 	};
 
 	this.setWindow = function(x1, x2, y1, y2) {
-		this.currCoord.x1 = x1;
-		this.currCoord.x2 = x2;
-		this.currCoord.y1 = y1;
-		this.currCoord.y2 = y2;
+		var windowBounds = normalizeWindow(x1, x2, y1, y2);
+		if(!windowBounds)
+			return;
+		this.currCoord.x1 = windowBounds.x1;
+		this.currCoord.x2 = windowBounds.x2;
+		this.currCoord.y1 = windowBounds.y1;
+		this.currCoord.y2 = windowBounds.y2;
 		this.startCoord = this.copyCoord(this.currCoord);
 		this.draw();
 	};
@@ -779,13 +777,14 @@ function JSgCalc (element){
 				self.checkMove(event.pageX - self.canvasX, event.pageY - self.canvasY);
 			}).mousedown(function(event) {
 				self.mouseDown(event);
-			}).on('wheel', function(event) {
-				var delta = event.originalEvent.wheelDelta || -event.originalEvent.deltaY;
-				self.mouseWheel(event, delta);
-				return false;
 			}).mouseup(function(event) {
 				self.mouseUp(event);
 			});
+
+			this.graph.addEventListener("wheel", function(event) {
+				event.preventDefault();
+				self.mouseWheel(event, -event.deltaY);
+			}, { passive: false });
 
 			$(window).resize(function() {
 				if($("#sidewrapper").is(":visible"))
@@ -804,7 +803,7 @@ function JSgCalc (element){
 $(document).ready(function() {
 	var jsgcalc = new JSgCalc("graph");
 	window.jsgcalc = jsgcalc;
-	jsgui.addInput();
+	jsgui.addInput("sin(x)");
 	jsgcalc.initCanvas();
 });
 window.JSgCalc = JSgCalc;

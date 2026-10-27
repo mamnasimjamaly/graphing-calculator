@@ -53,6 +53,35 @@ describe('Calc', () => {
         });
     });
 
+    describe('trig in the current angle mode', () => {
+        test('sin and asin use degrees', () => {
+            Calc.angles = 'degrees';
+
+            expect(math.sin(90)).toBeCloseTo(1);
+            expect(math.sin(180)).toBeCloseTo(0, 10);
+            expect(math.asin(1)).toBeCloseTo(90);
+            expect(math.asin(0)).toBeCloseTo(0);
+        });
+
+        test('sin and asin use gradians', () => {
+            Calc.angles = 'gradians';
+
+            expect(math.sin(100)).toBeCloseTo(1);
+            expect(math.asin(1)).toBeCloseTo(100);
+        });
+
+        test('atan2 returns degrees', () => {
+            Calc.angles = 'degrees';
+
+            expect(math.atan2(1, 1)).toBeCloseTo(45);
+        });
+
+        test('sin stays in radians by default', () => {
+            expect(math.sin(Math.PI / 2)).toBeCloseTo(1);
+            expect(math.asin(1)).toBeCloseTo(Math.PI / 2);
+        });
+    });
+
     describe('getDerivative', () => {
         test('calculates derivative of a linear function', () => {
             const derivative = Calc.getDerivative(x => 2 * x + 3, 5);
