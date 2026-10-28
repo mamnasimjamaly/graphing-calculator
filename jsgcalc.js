@@ -1,4 +1,4 @@
-import { evaluateLines, formatReadout, normalizeWindow, renderStrokes, traceEquation } from './graph-math.js';
+import { evaluateLines, findIntersections, formatPoint, formatReadout, nearestIntersection, normalizeWindow, renderStrokes, traceEquation } from './graph-math.js';
 
 function dump(text) {
 	console.log(text);
@@ -31,6 +31,8 @@ function JSgCalc (element){
 	this.quality = 1;
 	this.zoomFactor = 0.1;
 	this.lines = [];
+	this.intersections = [];
+	this.showingIntersection = false;
 	this.fillareapath;
 
 	this.arbRound = function(value, roundTo) {
@@ -566,7 +568,59 @@ function JSgCalc (element){
 		}).forEach(function(result) {
 			self.markEquationError(result.index, result.error);
 		});
+		this.intersections = this.collectIntersections();
 		jsgui.updateValues();
+	};
+
+	this.collectIntersections = function() {
+		var fns = [];
+		var i, equation;
+		for (i = 0; i < this.lines.length; i++) {
+			equation = this.lines[i].equation;
+			if (!equation || !String(equation).trim())
+				continue;
+			try {
+				fns.push(this.getFunction(equation));
+			} catch (e) {}
+		}
+		return findIntersections(fns, this.currCoord.x1, this.currCoord.x2, {
+			y1: this.currCoord.y1,
+			y2: this.currCoord.y2
+		});
+	};
+
+	this.roundForReadout = function(n, digits) {
+		return Calc.roundToSignificantFigures(n, digits);
+	};
+
+	this.showReadout = function(x, y) {
+		$("#coord_readout").text(formatReadout(x, y, this.roundForReadout));
+	};
+
+	this.drawIntersectionMarker = function(point) {
+		var text = formatPoint(point.x, point.y, this.roundForReadout);
+		this.drawDot(point.x, point.y, "#111111", 5);
+		this.drawLabel(point.x, point.y, text, "#111111");
+		$("#coord_readout").text(text);
+	};
+
+	this.intersectionAtPointer = function(px, py) {
+		var self = this;
+		return nearestIntersection(this.intersections || [], px, py, function(x, y) {
+			return self.getCoord(x, y);
+		}, 20);
+	};
+
+	this.showHoverIntersection = function(px, py) {
+		var hit = this.intersectionAtPointer(px, py);
+		if (hit || this.showingIntersection) {
+			this.draw();
+			hit = this.intersectionAtPointer(px, py);
+			if (hit)
+				this.drawIntersectionMarker(hit);
+			this.showingIntersection = !!hit;
+		}
+		return hit;
 	};
 
 	//Gets the scale (pixels per unit)
@@ -618,25 +672,25 @@ function JSgCalc (element){
 			this.draw();
 			this.drawRoot(this.getEquation(jsgui.currEq), this.getColor(jsgui.currEq), x);
 		}
-		else if(jsgui.currtool === "intersect") {
-			this.draw();
-			this.drawIntersect(this.getEquation(jsgui.currEq), this.getColor(jsgui.currEq), x);
-		}
 		else if(jsgui.currtool === "derivative") {
 			this.draw();
 			this.drawDerivative(this.getEquation(jsgui.currEq), this.getColor(jsgui.currEq), x);
 		}
+
+		var snapped = false;
+		if(this.mousebutton === 0 && (jsgui.currtool === "pointer" || jsgui.currtool === "intersect"))
+			snapped = !!this.showHoverIntersection(x, y);
+
 		this.prevDrag = {x : x, y : y};
-		this.updateReadout(x, y);
+		if(!snapped)
+			this.updateReadout(x, y);
 	};
 
 	this.updateReadout = function(x, y) {
 		var value = this.getValue(x, y);
 		if(!isFinite(value.x) || !isFinite(value.y))
 			return;
-		$("#coord_readout").text(formatReadout(value.x, value.y, function(n, digits) {
-			return Calc.roundToSignificantFigures(n, digits);
-		}));
+		this.showReadout(value.x, value.y);
 	};
 
 	this.mouseDown = function(event) {

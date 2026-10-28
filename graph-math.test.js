@@ -2,8 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { Calc } from './calc.js';
 import {
 	evaluateLines,
+	findIntersections,
+	formatPoint,
 	formatReadout,
 	jumpLimit,
+	nearestIntersection,
 	normalizeWindow,
 	renderStrokes,
 	sampleY,
@@ -137,6 +140,117 @@ describe('normalizeWindow', () => {
 	});
 });
 
+describe('findIntersections', () => {
+	test('finds the crossing of two lines', () => {
+		const points = findIntersections([
+			x => x,
+			x => 10 - x,
+		], 0, 10);
+		const crossing = points.find(point => Math.abs(point.x - 5) < 1e-4 && Math.abs(point.y - 5) < 1e-4);
+
+		expect(crossing).toBeTruthy();
+	});
+
+	test('finds both crossings of a parabola and a horizontal line', () => {
+		const points = findIntersections([
+			x => x * x,
+			() => 4,
+		], -5, 5);
+
+		const xs = points.map(point => point.x);
+
+		expect(xs.some(x => Math.abs(x + 2) < 1e-4)).toBe(true);
+		expect(xs.some(x => Math.abs(x - 2) < 1e-4)).toBe(true);
+	});
+
+	test('shows an origin crossing as (0, 0)', () => {
+		const round = Calc.roundToSignificantFigures;
+		const cases = [
+			['sin(x)', 'x', -5.3, 6.7],
+			['sin(x)', '0', -10, 0.2],
+			['x^2', '0', -5.3, 6.7],
+			['x', '0', -8.03, 7.77],
+		];
+
+		cases.forEach(([left, right, x1, x2]) => {
+			const points = findIntersections([
+				Calc.makeFunction(left),
+				Calc.makeFunction(right),
+			], x1, x2);
+			const origin = points.find(point => point.x === 0 && point.y === 0);
+
+			expect(origin, left + ' and ' + right).toEqual({ x: 0, y: 0 });
+			expect(formatPoint(points.find(point => Math.abs(point.x) < 1).x, points.find(point => Math.abs(point.x) < 1).y, round)).toBe('(0, 0)');
+		});
+	});
+
+	test('returns one point where three curves meet', () => {
+		const points = findIntersections([
+			x => x,
+			x => -x,
+			() => 0,
+		], -4, 4);
+
+		expect(points).toHaveLength(1);
+		expect(points[0].x).toBeCloseTo(0, 5);
+		expect(points[0].y).toBeCloseTo(0, 5);
+	});
+
+	test('does not invent a crossing at an asymptote', () => {
+		const points = findIntersections([
+			Calc.makeFunction('tan(x)'),
+			() => 0,
+		], 1, 2);
+
+		expect(points).toEqual([]);
+	});
+
+	test('returns nothing for a single curve', () => {
+		expect(findIntersections([x => x], -5, 5).some(point => point.x === 0 && point.y === 0)).toBe(true);
+	});
+
+	test('shows where one curve meets each axis', () => {
+		const points = findIntersections([x => x - 1], -5, 5, { y1: -5, y2: 5 });
+		const xIntercept = points.find(point => Math.abs(point.x - 1) < 1e-4 && Math.abs(point.y) < 1e-4);
+		const yIntercept = points.find(point => point.x === 0);
+
+		expect(xIntercept).toBeTruthy();
+		expect(yIntercept.y).toBeCloseTo(-1, 5);
+	});
+
+	test('shows the x-intercepts of sin(x)', () => {
+		const points = findIntersections([
+			Calc.makeFunction('sin(x)'),
+		], -6.5, 6.5, { y1: -2, y2: 2 });
+		const roots = points.filter(point => point.y === 0).map(point => point.x).sort((a, b) => a - b);
+
+		expect(roots.map(x => Math.round(x * 1000) / 1000)).toEqual([
+			Math.round(-2 * Math.PI * 1000) / 1000,
+			Math.round(-Math.PI * 1000) / 1000,
+			0,
+			Math.round(Math.PI * 1000) / 1000,
+			Math.round(2 * Math.PI * 1000) / 1000,
+		]);
+	});
+
+	test('skips intercepts that are outside the window', () => {
+		expect(findIntersections([() => 20], -5, 5, { y1: -5, y2: 5 })).toEqual([]);
+	});
+});
+
+describe('nearestIntersection', () => {
+	const points = [{ x: 0, y: 0 }, { x: 10, y: 10 }];
+	const identity = (x, y) => ({ x, y });
+
+	test('picks the intersection under the pointer', () => {
+		expect(nearestIntersection(points, 1, 1, identity, 2)).toEqual(points[0]);
+	});
+
+	test('ignores an intersection the pointer is not over', () => {
+		expect(nearestIntersection(points, 100, 100, identity, 18)).toBeNull();
+	});
+});
+
 describe('formatReadout', () => {
 	test('formats graph coordinates', () => {
 		expect(formatReadout(1.23456789, -2, Calc.roundToSignificantFigures)).toBe(
@@ -146,5 +260,11 @@ describe('formatReadout', () => {
 
 	test('returns an empty string for a non-numeric coordinate', () => {
 		expect(formatReadout(NaN, 1, Calc.roundToSignificantFigures)).toBe('');
+	});
+
+	test('formats an intersection as an ordered pair', () => {
+		expect(formatPoint(5, -2, Calc.roundToSignificantFigures)).toBe('(5, -2)');
+		expect(formatPoint(1.23456789, 0, Calc.roundToSignificantFigures)).toBe('(1.23457, 0)');
+		expect(formatPoint(8.88e-16, -7.45e-10, Calc.roundToSignificantFigures)).toBe('(0, 0)');
 	});
 });
